@@ -23,10 +23,10 @@ def buildModel(data: dict) -> pyomo.ConcreteModel():
     model.q = data['fixed_cost']
     model.h = data['inv_cost']
     model.batch = data['batch_sizes']
-    model.primoInv = data['primoInventory']
+    model.primoInv = data['primoInventoryTilUge3']
     model.leadTime = data['leadTimes']
-    model.lagerkapacitetforbrug = data['lagerkapacitetforbrug'] #Hvor meget plads tager hvert produkt på lageret
-    model.produktionskapacitetforbrug = data['produktionskapacitetforbrug'] #Hvor meget plads tager hvert produkt i produktionen
+    model.lagerkapacitetforbrug = data['Lager_forbrug'] #Hvor meget plads tager hvert produkt på lageret
+    model.produktionskapacitetforbrug = data['Produktion_forbrug'] #Hvor meget plads tager hvert produkt i produktionen
     model.r = data['r']
     model.bigM = [data['max_prod']/model.batch[k] for k in model.products]
 
@@ -43,10 +43,12 @@ def buildModel(data: dict) -> pyomo.ConcreteModel():
                  + model.h[k][t]*model.s[k, t] for k in model.products for t in model.periods)
     )
 
-    # Fix past x-variables to zero
-    for k in model.products:
-        model.x[k, -2].fix(0)
-        model.x[k, -1].fix(0)
+    # Fix past x-variables for enzymes to past production values printed from Opgave 1
+    model.x[0,-2].fix(7476)
+    model.x[0,-1].fix(9737)
+    model.x[1,-2].fix(2155)
+    model.x[1,-1].fix(0)
+
 
     # Add flow conservation constraints
     model.flow = pyomo.ConstraintList()
@@ -121,7 +123,7 @@ def displaySolution(model: pyomo.ConcreteModel()):
         s_values = [pyomo.value(model.s[k,t]) for t in model.periods]
         x_values = [model.batch[k]*pyomo.value(model.x[k,t]) for t in model.periods]
         demands = [model.demands[k][t] + sum(model.batch[k]*model.r[l][k]*pyomo.value(model.x[k, t] )for l in model.products) for t in model.periods]
-        # Width of a bar 
+        # Width of a bar
         width = 0.4
         # Add the three plots to the fig-figure
         plt.bar(pos, demands, width, label='Demand '+ model.product_names[k], color='blue')
@@ -153,5 +155,5 @@ def main(filename: str):
 
 
 if __name__ == '__main__':
-    filename = 'Data'
+    filename = 'Data_Opgave_4'
     main(filename)
